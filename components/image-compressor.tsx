@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
-import { Info, UploadCloud, Download, X } from 'lucide-react'
+import { Info, UploadCloud, Download, X, ExternalLink, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import Image from 'next/image'
@@ -29,6 +29,7 @@ export default function ImageCompressor() {
 	const [error, setError] = useState<string | null>(null)
 	const [outputFormat, setOutputFormat] = useState('webp')
 	const [showProgress, setShowProgress] = useState(false)
+	const [isDownloadingAll, setIsDownloadingAll] = useState(false) // New loading state
 
 	useEffect(() => {
 		return () => {
@@ -164,14 +165,14 @@ export default function ImageCompressor() {
 			return
 		}
 
+		setIsDownloadingAll(true) // Start loader
 		const filesData = compressedImages.map(async img => {
-			// @ts-expect-error sdasd
 			const response = await fetch(img.compressedUrl)
 			const blob = await response.blob()
 			const arrayBuffer = await blob.arrayBuffer()
 			return {
 				name: `compressed-${img.file.name}`,
-				buffer: Buffer.from(arrayBuffer).toString('base64'), // Send as base64 string
+				buffer: Buffer.from(arrayBuffer).toString('base64'),
 			}
 		})
 
@@ -202,15 +203,17 @@ export default function ImageCompressor() {
 		} catch (error) {
 			console.error('Error downloading all images:', error)
 			toast.error('Failed to download all images')
+		} finally {
+			setIsDownloadingAll(false) // Stop loader
 		}
 	}
 
 	return (
-		<div className="min-h-screen bg-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+		<div className="min-h-screen bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
 			<div className="max-w-3xl mx-auto">
 				<header className="text-center mb-8">
-					<h1 className="text-3xl font-bold text-gray-900 mb-2">Image Compressor</h1>
-					<p className="text-gray-600">Compress your images quickly and easily</p>
+					<h1 className="text-3xl font-bold text-white mb-2">Image Compressor</h1>
+					<p className="text-gray-400">Compress your images quickly and easily</p>
 				</header>
 
 				<Card className="mb-8">
@@ -218,7 +221,7 @@ export default function ImageCompressor() {
 						<div
 							onDrop={handleDrop}
 							onDragOver={e => e.preventDefault()}
-							className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
+							className="border-2 border-dashed border-gray-500 rounded-lg p-8 text-center cursor-pointer hover:border-primary transition-colors"
 						>
 							<input
 								type="file"
@@ -230,7 +233,7 @@ export default function ImageCompressor() {
 							/>
 							<label htmlFor="fileInput" className="cursor-pointer">
 								<UploadCloud className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-								<p className="text-lg font-semibold text-gray-700 mb-1">Drop your images here</p>
+								<p className="text-lg font-semibold text-gray-300 mb-1">Drop your images here</p>
 								<p className="text-sm text-gray-500">or click to select files</p>
 							</label>
 						</div>
@@ -315,13 +318,18 @@ export default function ImageCompressor() {
 										>
 											{isCompressing ? 'Compressing...' : 'Compress Images'}
 										</Button>
-										{compressedCount > 0 && (
+										{compressedCount > 0 && images.length > 1 && (
 											<Button
 												onClick={downloadAllImages}
 												className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+												disabled={isDownloadingAll}
 											>
-												<Download className="mr-2 h-4 w-4" />
-												Download All
+												{isDownloadingAll ? (
+													<Loader2 className="animate-spin h-4 w-4 mr-2" />
+												) : (
+													<Download className="mr-2 h-4 w-4" />
+												)}
+												{isDownloadingAll ? 'Downloading...' : 'Download All'}
 											</Button>
 										)}
 									</div>
@@ -343,6 +351,11 @@ export default function ImageCompressor() {
 					<p className="flex items-center justify-center">
 						<Info className="h-4 w-4 mr-1" />
 						Compress up to {MAX_IMAGES} images at once, max 5MB each
+					</p>
+					<p className="flex items-center justify-center text-blue-400">
+						<a href="https://imgopaal.me" target="_blank" className="flex items-center">
+							Developed By Gopal &nbsp; <ExternalLink className="size-4" />
+						</a>
 					</p>
 				</footer>
 			</div>
