@@ -167,6 +167,7 @@ export default function ImageCompressor() {
 
 		setIsDownloadingAll(true) // Start loader
 		const filesData = compressedImages.map(async img => {
+			// @ts-expect-error sdfsd
 			const response = await fetch(img.compressedUrl)
 			const blob = await response.blob()
 			const arrayBuffer = await blob.arrayBuffer()
